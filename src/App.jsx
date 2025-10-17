@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ChessBoard from './ChessBoard';
 import { createInitialBoard, movePiece, isInCheck, isCheckmate, isStalemate, isInsufficientMaterial, getBoardHash } from './gameLogic';
 import { calculateBestMove, shouldAiAcceptDraw } from './aiEngineAdapter';
@@ -22,7 +23,13 @@ function App() {
   
   // AI自动走棋
   useEffect(() => {
-    if (gameMode === 'pve' && currentPlayer === aiColor && gameStatus === 'playing' && !isAiThinking) {
+    // 检查条件：人机对战 && 轮到AI && 游戏未结束 && AI未思考中
+    if (gameMode === 'pve' && 
+        currentPlayer === aiColor && 
+        gameStatus !== 'checkmate' && 
+        gameStatus !== 'stalemate' && 
+        gameStatus !== 'draw' && 
+        !isAiThinking) {
       setIsAiThinking(true);
       
       // 延迟一下让AI看起来在思考
@@ -165,7 +172,11 @@ function App() {
     setAiColor(newAiColor);
     
     // 注意：棋局不变，只是反转视角
-    // playerColor 会自动通过 aiColor 的变化而更新
+    // 如果反转后轮到AI走棋，需要重置 isAiThinking 以触发 useEffect
+    if (currentPlayer === newAiColor && !isAiThinking) {
+      // 触发AI走棋：通过短暂设置 isAiThinking 为 false 来重新触发 useEffect
+      setIsAiThinking(false);
+    }
   };
   
   const handleBackToMenu = () => {
