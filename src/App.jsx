@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
 import ChessBoard from './ChessBoard';
 import { createInitialBoard, movePiece, isInCheck, isCheckmate, isStalemate, isInsufficientMaterial, getBoardHash } from './gameLogic';
 import { calculateBestMove, shouldAiAcceptDraw } from './aiEngineAdapter';
