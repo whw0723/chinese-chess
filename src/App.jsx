@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ChessBoard from './ChessBoard';
 import { createInitialBoard, movePiece, isInCheck, isCheckmate, isStalemate, isInsufficientMaterial, getBoardHash } from './gameLogic';
 import { calculateBestMove } from './aiEngineAdapter';
@@ -18,14 +18,57 @@ function App() {
   const [lastMove, setLastMove] = useState(null); // 最近一手棋
   const [movesSinceCapture, setMovesSinceCapture] = useState(0); // 自上次吃子以来的回合数
   const [positionHistory, setPositionHistory] = useState([]); // 局面历史（用于检测重复）
+  const [audioEnabled, setAudioEnabled] = useState(false); // 音频是否已激活
+  const [soundEnabled, setSoundEnabled] = useState(true); // 音效开关
+  
+  // 预加载所有音效文件
+  const audioCache = useRef({});
+  
+  useEffect(() => {
+    // 预加载音效
+    const sounds = ['move', 'move2', 'capture', 'capture2', 'check', 'check2', 'win', 'loss', 'draw', 'illegal'];
+    sounds.forEach(sound => {
+      const audio = new Audio(`/sounds/${sound}.wav`);
+      audio.load();
+      audioCache.current[sound] = audio;
+    });
+  }, []);
   
   // 播放音效的辅助函数
   const playSound = (soundFile) => {
+    if (!soundEnabled) return; // 如果音效关闭，直接返回
+    
     try {
-      const audio = new Audio(`/sounds/${soundFile}.wav`);
-      audio.play().catch(err => console.log('音效播放失败:', err));
+      console.log('尝试播放音效:', soundFile); // 调试信息
+      
+      // 获取预加载的音频对象
+      let audio = audioCache.current[soundFile];
+      if (!audio) {
+        audio = new Audio(`/sounds/${soundFile}.wav`);
+        audioCache.current[soundFile] = audio;
+      }
+      
+      // 重置播放位置
+      audio.currentTime = 0;
+      
+      // 播放音效
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('音效播放成功:', soundFile);
+            if (!audioEnabled) setAudioEnabled(true);
+          })
+          .catch(err => {
+            console.log('音效播放失败:', soundFile, err.message);
+            // 移动端首次需要用户交互激活
+            if (err.name === 'NotAllowedError') {
+              console.log('需要用户交互才能播放音效');
+            }
+          });
+      }
     } catch (err) {
-      console.log('音效加载失败:', err);
+      console.log('音效加载失败:', soundFile, err);
     }
   };
   
@@ -214,6 +257,23 @@ function App() {
     setAiColor(selectedAiColor);
     setDifficulty(selectedDifficulty);
     handleReset();
+    
+    // 移动端首次激活音频：播放一个静音来触发浏览器允许音频播放
+    setTimeout(() => {
+      const sounds = Object.values(audioCache.current);
+      if (sounds.length > 0 && sounds[0]) {
+        sounds[0].volume = 0; // 设置为静音
+        sounds[0].play()
+          .then(() => {
+            sounds[0].pause();
+            sounds[0].volume = 1; // 恢复音量
+            sounds[0].currentTime = 0;
+            setAudioEnabled(true);
+            console.log('移动端音频已激活');
+          })
+          .catch(err => console.log('音频激活失败:', err.message));
+      }
+    }, 100);
   };
   
   // 游戏模式选择界面
@@ -300,6 +360,9 @@ function App() {
               🔁 反转
             </button>
           )}
+          <button onClick={() => setSoundEnabled(!soundEnabled)} disabled={isAiThinking}>
+            {soundEnabled ? '🔊' : '🔇'} 音效
+          </button>
           <button onClick={handleBackToMenu} disabled={isAiThinking}>
             🏠 返回菜单
           </button>
