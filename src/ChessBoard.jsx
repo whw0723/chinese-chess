@@ -42,7 +42,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   
   useEffect(() => {
     drawBoard();
-  }, [board, selectedPiece, legalMoves, gameStatus, winner, errorMessage, playerColor]);
+  }, [board, selectedPiece, legalMoves, gameStatus, winner, errorMessage, playerColor, dimensions]);
   
   // 绘制棋盘
   const drawBoard = () => {

@@ -34,7 +34,10 @@ h1 {
               0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(25, 118, 210, 0.2);
   min-width: 520px;
+  width: 100%;
+  max-width: 700px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .status {
@@ -287,9 +290,10 @@ button:disabled {
 
   .game-info {
     min-width: unset;
-    width: 100%;
+    width: calc(100% - 20px);
     max-width: 100%;
     padding: 15px;
+    margin: 0 10px 15px 10px;
     box-sizing: border-box;
   }
 
