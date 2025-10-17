@@ -19,6 +19,16 @@ function App() {
   const [movesSinceCapture, setMovesSinceCapture] = useState(0); // 自上次吃子以来的回合数
   const [positionHistory, setPositionHistory] = useState([]); // 局面历史（用于检测重复）
   
+  // 播放音效的辅助函数
+  const playSound = (soundFile) => {
+    try {
+      const audio = new Audio(`/sounds/${soundFile}.wav`);
+      audio.play().catch(err => console.log('音效播放失败:', err));
+    } catch (err) {
+      console.log('音效加载失败:', err);
+    }
+  };
+  
   // AI自动走棋
   useEffect(() => {
     // 检查条件：人机对战 && 轮到AI && 游戏未结束 && AI未思考中
@@ -50,6 +60,7 @@ function App() {
     
     // 检查移动后是否让自己被将军（非法移动）
     if (isInCheck(newBoard, currentPlayer)) {
+      playSound('illegal'); // 播放非法移动音效
       setErrorMessage('不能送将！');
       // 1.5秒后清除错误提示
       setTimeout(() => setErrorMessage(null), 1500);
@@ -78,6 +89,7 @@ function App() {
     // 检查是否三次重复局面（采用XQlightweight的做法）
     const hashCount = newPositionHistory.filter(h => h === boardHash).length;
     if (hashCount >= 3) {
+      playSound('draw'); // 播放和棋音效
       setGameStatus('draw');
       setWinner('draw');
       return;
@@ -85,6 +97,7 @@ function App() {
     
     // 检查自然限着规则（100回合即200步无吃子，参考XQlightweight）
     if (newMovesSinceCapture >= 100) {
+      playSound('draw'); // 播放和棋音效
       setGameStatus('draw');
       setWinner('draw');
       return;
@@ -93,17 +106,29 @@ function App() {
     // 切换玩家
     const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
     
+    // 判断是否是AI走棋
+    const isAiMove = gameMode === 'pve' && currentPlayer === aiColor;
+    
     // 先检查对手是否被将军或将死（优先级最高）
     if (isCheckmate(newBoard, nextPlayer)) {
+      playSound(isAiMove ? 'loss' : 'win'); // 播放胜负音效
       setGameStatus('checkmate');
       setWinner(currentPlayer);
     } else if (isStalemate(newBoard, nextPlayer)) {
       // 中国象棋规则：困毙（无子可走但未被将军）判负，不是和棋
+      playSound(isAiMove ? 'loss' : 'win'); // 播放胜负音效
       setGameStatus('stalemate');
       setWinner(currentPlayer); // 困毙方判负，对手获胜
     } else if (isInCheck(newBoard, nextPlayer)) {
+      playSound(isAiMove ? 'check2' : 'check'); // 播放将军音效
       setGameStatus('check');
     } else {
+      // 普通移动：检查是否吃子
+      if (isCapture) {
+        playSound(isAiMove ? 'capture2' : 'capture'); // 播放吃子音效
+      } else {
+        playSound(isAiMove ? 'move2' : 'move'); // 播放移动音效
+      }
       setGameStatus('playing');
     }
     
@@ -113,6 +138,7 @@ function App() {
         gameStatus !== 'checkmate' && 
         gameStatus !== 'stalemate' && 
         isInsufficientMaterial(newBoard)) {
+      playSound('draw'); // 播放和棋音效
       setGameStatus('draw');
       setWinner('draw');
     }
