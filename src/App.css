@@ -27,7 +27,7 @@ h1 {
 
 .game-info {
   background: rgba(255, 255, 255, 0.95);
-  padding: 12px 24px; /* 减少上下内边距：从20px改为12px */
+  padding: 18px 24px; /* 增加上下内边距 */
   border-radius: 12px;
   margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
@@ -36,12 +36,13 @@ h1 {
   min-width: 520px;
   width: 100%;
   max-width: 700px;
+  min-height: 160px; /* 固定最小高度，防止布局移动 */
   text-align: center;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center; /* 居中对齐 */
-  gap: 8px; /* 内部元素间距 */
+  gap: 10px; /* 增加内部元素间距 */
   overflow: hidden; /* 隐藏超出内容 */
 }
 
@@ -360,10 +361,11 @@ button:disabled {
     min-width: unset;
     width: calc(100% - 20px);
     max-width: 100%;
-    padding: 10px 15px; /* 减少移动端内边距 */
+    padding: 14px 15px; /* 增加移动端内边距 */
     margin: 0 10px 15px 10px;
     box-sizing: border-box;
-    gap: 6px; /* 减小间距 */
+    gap: 8px; /* 增加间距 */
+    min-height: 140px; /* 移动端固定最小高度 */
   }
 
   .status {
