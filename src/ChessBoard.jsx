@@ -346,7 +346,6 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       }}
       style={{ 
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.7 : 1,
         maxWidth: '100%',
         width: '100%',
         height: 'auto',
