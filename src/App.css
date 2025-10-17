@@ -36,9 +36,12 @@ h1 {
   min-width: 520px;
   width: 100%;
   max-width: 700px;
-  min-height: 140px;
+  height: 140px; /* 固定高度防止抖动 */
   text-align: center;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .status {
@@ -46,11 +49,12 @@ h1 {
   margin-bottom: 15px;
   font-weight: bold;
   color: #333;
-  min-height: 2.5em;
+  height: 2.5em; /* 固定高度 */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .player {
@@ -89,6 +93,8 @@ h1 {
   display: flex;
   gap: 15px;
   justify-content: center;
+  height: 44px; /* 固定按钮区域高度 */
+  align-items: center;
 }
 
 button {
@@ -298,7 +304,7 @@ button:disabled {
     min-width: unset;
     width: calc(100% - 20px);
     max-width: 100%;
-    min-height: 130px;
+    height: 150px; /* 移动端固定高度 */
     padding: 15px;
     margin: 0 10px 15px 10px;
     box-sizing: border-box;
@@ -306,12 +312,14 @@ button:disabled {
 
   .status {
     font-size: 1.2em;
-    min-height: 3em;
+    height: 3.5em; /* 移动端留多一些空间 */
   }
 
   .controls {
     flex-wrap: wrap;
     gap: 10px;
+    height: auto; /* 移动端允许换行 */
+    min-height: 44px;
   }
 
   button {
