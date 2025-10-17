@@ -27,7 +27,7 @@ h1 {
 
 .game-info {
   background: rgba(255, 255, 255, 0.95);
-  padding: 20px 30px;
+  padding: 12px 24px; /* 减少上下内边距：从20px改为12px */
   border-radius: 12px;
   margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
@@ -36,21 +36,20 @@ h1 {
   min-width: 520px;
   width: 100%;
   max-width: 700px;
-  height: 180px; /* 增加高度以容纳所有按钮 */
   text-align: center;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-around; /* 均匀分布空间 */
+  justify-content: center; /* 居中对齐 */
+  gap: 8px; /* 内部元素间距 */
   overflow: hidden; /* 隐藏超出内容 */
 }
 
 .status {
   font-size: 1.5em;
-  margin-bottom: 15px;
+  margin-bottom: 0; /* 去除下边距 */
   font-weight: bold;
   color: #333;
-  height: 2.5em; /* 固定高度 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,20 +360,19 @@ button:disabled {
     min-width: unset;
     width: calc(100% - 20px);
     max-width: 100%;
-    height: 180px; /* 移动端也增加高度 */
-    padding: 15px;
+    padding: 10px 15px; /* 减少移动端内边距 */
     margin: 0 10px 15px 10px;
     box-sizing: border-box;
+    gap: 6px; /* 减小间距 */
   }
 
   .status {
     font-size: 1.2em;
-    height: 3.5em; /* 移动端留多一些空间 */
   }
 
   .controls {
     gap: 8px; /* 移动端缩小间距 */
-    max-height: 90px;
+    max-height: none; /* 移除最大高度限制 */
   }
 
   button {
@@ -383,22 +381,6 @@ button:disabled {
     flex: 0 1 auto; /* 不强制伸缩 */
     min-width: 70px;
     max-width: 45%; /* 每行最多2个按钮 */
-  }
-
-  .instructions {
-    max-width: 100%;
-    width: 100%;
-    padding: 15px;
-    box-sizing: border-box;
-  }
-
-  .instructions h3 {
-    font-size: 1.1em;
-  }
-
-  .instructions ul {
-    font-size: 0.9em;
-    padding-left: 20px;
   }
 
   .mode-selection {

@@ -272,7 +272,6 @@ function App() {
   
   return (
     <div className="app">
-      <h1>中国象棋 {gameMode === 'pve' ? '- 人机对战' : '- 双人对战'}</h1>
       <div className="game-info">
         <div className="status">
           {gameStatus === 'checkmate' ? (
@@ -345,23 +344,6 @@ function App() {
         disabled={isAiThinking || (gameMode === 'pve' && currentPlayer === aiColor)}
         lastMove={lastMove}
       />
-      <div className="instructions">
-        <h3>游戏说明</h3>
-        <ul>
-          <li>红方先手，双方轮流走棋</li>
-          <li>点击己方棋子选中，绿点显示合法走法</li>
-          <li>再次点击目标位置完成移动</li>
-          <li>将死对方获胜</li>
-          <li>双方可以点击“求和”按钮提议和棋</li>
-          <li>120回合无吃子或三次重复局面自动判和</li>
-          {gameMode === 'pve' && (
-            <>
-              <li>🤖 AI难度：{difficulty === 'easy' ? '简单' : difficulty === 'medium' ? '中等' : '困难'}</li>
-              <li>🧠 AI会根据局势评估决定是否接受求和</li>
-            </>
-          )}
-        </ul>
-      </div>
     </div>
   );
 }
