@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ChessBoard from './ChessBoard';
 import { createInitialBoard, movePiece, isInCheck, isCheckmate, isStalemate, isInsufficientMaterial, getBoardHash } from './gameLogic';
-import { calculateBestMove, shouldAiAcceptDraw } from './aiEngineAdapter';
+import { calculateBestMove } from './aiEngineAdapter';
 import './App.css';
 
 function App() {
@@ -18,7 +18,6 @@ function App() {
   const [lastMove, setLastMove] = useState(null); // 最近一手棋
   const [movesSinceCapture, setMovesSinceCapture] = useState(0); // 自上次吃子以来的回合数
   const [positionHistory, setPositionHistory] = useState([]); // 局面历史（用于检测重复）
-  const [drawOffer, setDrawOffer] = useState(null); // 求和提议: { from: 'red' | 'black' }
   
   // AI自动走棋
   useEffect(() => {
@@ -68,9 +67,6 @@ function App() {
     // 保存最近一手棋
     setLastMove({ from: [fromRow, fromCol], to: [toRow, toCol] });
     
-    // 清除求和提议（棋局继续后求和失效）
-    setDrawOffer(null);
-    
     // 更新自上次吃子的回合数
     setMovesSinceCapture(newMovesSinceCapture);
     
@@ -79,7 +75,7 @@ function App() {
     const newPositionHistory = [...positionHistory, boardHash];
     setPositionHistory(newPositionHistory);
     
-    // 检查是否三次重复局面
+    // 检查是否三次重复局面（采用XQlightweight的做法）
     const hashCount = newPositionHistory.filter(h => h === boardHash).length;
     if (hashCount >= 3) {
       setGameStatus('draw');
@@ -87,15 +83,15 @@ function App() {
       return;
     }
     
-    // 检查自然限着规则（120回合即240步无吃子）
-    if (newMovesSinceCapture >= 120) {
+    // 检查自然限着规则（100回合即200步无吃子，参考XQlightweight）
+    if (newMovesSinceCapture >= 100) {
       setGameStatus('draw');
       setWinner('draw');
       return;
     }
     
-    // 检查子力不足
-    if (isInsufficientMaterial(newBoard)) {
+    // 检查子力不足（吃子后检查是否双方都没有攻击性棋子）
+    if (isCapture && isInsufficientMaterial(newBoard)) {
       setGameStatus('draw');
       setWinner('draw');
       return;
@@ -159,7 +155,6 @@ function App() {
     setLastMove(null); // 清除最近一手棋
     setMovesSinceCapture(0);
     setPositionHistory([]);
-    setDrawOffer(null);
   };
   
   // 反转棋盘：交换玩家和AI的执棋颜色
@@ -183,42 +178,7 @@ function App() {
     setGameMode(null);
   };
   
-  // 提议求和
-  const handleOfferDraw = () => {
-    if (gameStatus !== 'playing' && gameStatus !== 'check') return;
-    if (isAiThinking) return;
-    
-    setDrawOffer({ from: currentPlayer });
-    
-    // 如果是人机对战且玩家提议AI求和
-    if (gameMode === 'pve' && currentPlayer !== aiColor) {
-      setIsAiThinking(true);
-      setTimeout(() => {
-        // AI根据局势评估决定是否接受
-        const aiAccepts = shouldAiAcceptDraw(board, aiColor, difficulty);
-        if (aiAccepts) {
-          handleAcceptDraw();
-        } else {
-          handleDeclineDraw();
-        }
-        setIsAiThinking(false);
-      }, 1500); // 1.5秒延迟模拟AI思考
-    }
-  };
-  
-  // 接受求和
-  const handleAcceptDraw = () => {
-    setGameStatus('draw');
-    setWinner('draw');
-    setDrawOffer(null);
-  };
-  
-  // 拒绝求和
-  const handleDeclineDraw = () => {
-    setDrawOffer(null);
-    setErrorMessage('对方拒绝了求和');
-    setTimeout(() => setErrorMessage(null), 1500);
-  };
+
   
   const startGame = (mode, selectedAiColor = 'black', selectedDifficulty = 'medium') => {
     setGameMode(mode);
@@ -290,16 +250,7 @@ function App() {
             </>
           )}
         </div>
-        
-        {/* 求和提议显示 */}
-        {drawOffer && drawOffer.from !== currentPlayer && gameMode === 'pvp' && (
-          <div className="draw-offer">
-            <span>🤝 {drawOffer.from === 'red' ? '红方' : '黑方'}提议求和</span>
-            <button onClick={handleAcceptDraw} className="accept-btn">同意</button>
-            <button onClick={handleDeclineDraw} className="decline-btn">拒绝</button>
-          </div>
-        )}
-        
+
         <div className="controls">
           <button 
             onClick={handleUndo} 
@@ -309,16 +260,6 @@ function App() {
             }
           >
             ⏮️ 悔棋
-          </button>
-          <button 
-            onClick={handleOfferDraw}
-            disabled={
-              isAiThinking || 
-              (gameStatus !== 'playing' && gameStatus !== 'check') ||
-              (drawOffer && drawOffer.from === currentPlayer)
-            }
-          >
-            🤝 求和
           </button>
           <button onClick={handleReset} disabled={isAiThinking}>
             🔄 重新开始
