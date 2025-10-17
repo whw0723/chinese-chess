@@ -54,8 +54,11 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 禁止换行 */
   overflow: hidden; /* 防止内容溢出 */
+  white-space: nowrap; /* 防止文字换行 */
+  text-overflow: ellipsis; /* 超长文字显示省略号 */
+  min-height: 45px; /* 固定最小高度，确保布局稳定 */
 }
 
 .player {
@@ -77,6 +80,8 @@ h1 {
 .check {
   color: #ff6b00;
   animation: blink 1s infinite;
+  white-space: nowrap; /* 防止将军文字换行 */
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .winner {
@@ -323,6 +328,11 @@ button:disabled {
 
   .status {
     font-size: 1.2em;
+    flex-wrap: nowrap; /* 移动端也禁止换行 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 40px; /* 移动端固定高度 */
   }
 
   .controls {

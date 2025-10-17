@@ -240,13 +240,13 @@ function App() {
             <span className="draw">🤝 和棋！</span>
           ) : (
             <>
-              <span>当前回合：</span>
+              <span>当前:</span>
               <span className={`player ${currentPlayer}`}>
                 {currentPlayer === 'red' ? '红方' : '黑方'}
                 {gameMode === 'pve' && currentPlayer === aiColor && ' (AI)'}
               </span>
-              {gameStatus === 'check' && <span className="check">（将军！）</span>}
-              {isAiThinking && <span className="thinking"> 思考中...</span>}
+              {gameStatus === 'check' && <span className="check">将军!</span>}
+              {isAiThinking && <span className="thinking">思考中...</span>}
             </>
           )}
         </div>
