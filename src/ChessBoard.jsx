@@ -341,14 +341,11 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       }}
       style={{ 
         cursor: disabled ? 'not-allowed' : 'pointer',
-        border: '2px solid #8B4513',
-        borderRadius: '4px',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
         opacity: disabled ? 0.7 : 1,
         maxWidth: '100%',
+        width: '100%',
         height: 'auto',
-        display: 'block',
-        margin: '0 auto'
+        display: 'block'
       }}
     />
   );
