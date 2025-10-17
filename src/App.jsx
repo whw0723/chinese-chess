@@ -39,20 +39,23 @@ function App() {
     if (!soundEnabled) return; // 如果音效关闭，直接返回
     
     try {
-      console.log('尝试播放音效:', soundFile); // 调试信息
+      console.log('尝试播放音效:', soundFile);
       
       // 获取预加载的音频对象
       let audio = audioCache.current[soundFile];
       if (!audio) {
+        console.log('音频未预加载，创建新对象:', soundFile);
         audio = new Audio(`/sounds/${soundFile}.wav`);
+        audio.load();
         audioCache.current[soundFile] = audio;
       }
       
-      // 重置播放位置
-      audio.currentTime = 0;
+      // 克隆音频对象以支持快速连续播放
+      const clonedAudio = audio.cloneNode();
+      clonedAudio.volume = 1;
       
       // 播放音效
-      const playPromise = audio.play();
+      const playPromise = clonedAudio.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
@@ -62,8 +65,11 @@ function App() {
           .catch(err => {
             console.log('音效播放失败:', soundFile, err.message);
             // 移动端首次需要用户交互激活
-            if (err.name === 'NotAllowedError') {
-              console.log('需要用户交互才能播放音效');
+            if (err.name === 'NotAllowedError' || err.name === 'NotSupportedError') {
+              console.log('需要用户交互才能播放音效，尝试使用原始对象');
+              // 尝试直接播放原始对象
+              audio.currentTime = 0;
+              audio.play().catch(e => console.log('备用播放也失败:', e.message));
             }
           });
       }
@@ -258,22 +264,30 @@ function App() {
     setDifficulty(selectedDifficulty);
     handleReset();
     
-    // 移动端首次激活音频：播放一个静音来触发浏览器允许音频播放
-    setTimeout(() => {
-      const sounds = Object.values(audioCache.current);
-      if (sounds.length > 0 && sounds[0]) {
-        sounds[0].volume = 0; // 设置为静音
-        sounds[0].play()
-          .then(() => {
-            sounds[0].pause();
-            sounds[0].volume = 1; // 恢复音量
-            sounds[0].currentTime = 0;
-            setAudioEnabled(true);
-            console.log('移动端音频已激活');
-          })
-          .catch(err => console.log('音频激活失败:', err.message));
-      }
-    }, 100);
+    // 移动端首次激活音频：直接尝试播放所有音频
+    if (!audioEnabled) {
+      setTimeout(() => {
+        const soundFiles = ['move', 'move2', 'capture', 'capture2', 'check', 'check2', 'win', 'loss', 'draw', 'illegal'];
+        soundFiles.forEach(soundFile => {
+          const audio = audioCache.current[soundFile];
+          if (audio) {
+            audio.volume = 0.01; // 设置极小音量
+            const promise = audio.play();
+            if (promise) {
+              promise
+                .then(() => {
+                  audio.pause();
+                  audio.currentTime = 0;
+                  audio.volume = 1;
+                })
+                .catch(() => {});
+            }
+          }
+        });
+        setAudioEnabled(true);
+        console.log('音频上下文已激活');
+      }, 100);
+    }
   };
   
   // 游戏模式选择界面
