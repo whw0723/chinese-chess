@@ -39,6 +39,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   const CELL_SIZE = dimensions.cellSize;
   const BOARD_PADDING = dimensions.padding;
   const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.45); // 从0.4增加到0.45
+  const EXTRA_PADDING = PIECE_RADIUS + 5; // 额外padding容纳棋子
   
   useEffect(() => {
     drawBoard();
@@ -50,8 +51,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const width = CELL_SIZE * 8 + BOARD_PADDING * 2;
-    const height = CELL_SIZE * 9 + BOARD_PADDING * 2;
+    const width = CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING * 2;
+    const height = CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING * 2;
     
     // 根据玩家颜色决定是否翻转棋盘
     const shouldFlip = playerColor === 'black';
@@ -64,24 +65,27 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     
+    const offsetX = BOARD_PADDING + EXTRA_PADDING;
+    const offsetY = BOARD_PADDING + EXTRA_PADDING;
+    
     // 横线
     for (let i = 0; i < 10; i++) {
       ctx.beginPath();
-      ctx.moveTo(BOARD_PADDING, BOARD_PADDING + i * CELL_SIZE);
-      ctx.lineTo(BOARD_PADDING + 8 * CELL_SIZE, BOARD_PADDING + i * CELL_SIZE);
+      ctx.moveTo(offsetX, offsetY + i * CELL_SIZE);
+      ctx.lineTo(offsetX + 8 * CELL_SIZE, offsetY + i * CELL_SIZE);
       ctx.stroke();
     }
     
     // 竖线
     for (let i = 0; i < 9; i++) {
       ctx.beginPath();
-      ctx.moveTo(BOARD_PADDING + i * CELL_SIZE, BOARD_PADDING);
+      ctx.moveTo(offsetX + i * CELL_SIZE, offsetY);
       if (i === 0 || i === 8) {
-        ctx.lineTo(BOARD_PADDING + i * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
+        ctx.lineTo(offsetX + i * CELL_SIZE, offsetY + 9 * CELL_SIZE);
       } else {
-        ctx.lineTo(BOARD_PADDING + i * CELL_SIZE, BOARD_PADDING + 4 * CELL_SIZE);
-        ctx.moveTo(BOARD_PADDING + i * CELL_SIZE, BOARD_PADDING + 5 * CELL_SIZE);
-        ctx.lineTo(BOARD_PADDING + i * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
+        ctx.lineTo(offsetX + i * CELL_SIZE, offsetY + 4 * CELL_SIZE);
+        ctx.moveTo(offsetX + i * CELL_SIZE, offsetY + 5 * CELL_SIZE);
+        ctx.lineTo(offsetX + i * CELL_SIZE, offsetY + 9 * CELL_SIZE);
       }
       ctx.stroke();
     }
@@ -89,18 +93,18 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     // 绘制九宫格斜线
     // 上方九宫格
     ctx.beginPath();
-    ctx.moveTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING);
-    ctx.lineTo(BOARD_PADDING + 5 * CELL_SIZE, BOARD_PADDING + 2 * CELL_SIZE);
-    ctx.moveTo(BOARD_PADDING + 5 * CELL_SIZE, BOARD_PADDING);
-    ctx.lineTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING + 2 * CELL_SIZE);
+    ctx.moveTo(offsetX + 3 * CELL_SIZE, offsetY);
+    ctx.lineTo(offsetX + 5 * CELL_SIZE, offsetY + 2 * CELL_SIZE);
+    ctx.moveTo(offsetX + 5 * CELL_SIZE, offsetY);
+    ctx.lineTo(offsetX + 3 * CELL_SIZE, offsetY + 2 * CELL_SIZE);
     ctx.stroke();
     
     // 下方九宫格
     ctx.beginPath();
-    ctx.moveTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING + 7 * CELL_SIZE);
-    ctx.lineTo(BOARD_PADDING + 5 * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
-    ctx.moveTo(BOARD_PADDING + 5 * CELL_SIZE, BOARD_PADDING + 7 * CELL_SIZE);
-    ctx.lineTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
+    ctx.moveTo(offsetX + 3 * CELL_SIZE, offsetY + 7 * CELL_SIZE);
+    ctx.lineTo(offsetX + 5 * CELL_SIZE, offsetY + 9 * CELL_SIZE);
+    ctx.moveTo(offsetX + 5 * CELL_SIZE, offsetY + 7 * CELL_SIZE);
+    ctx.lineTo(offsetX + 3 * CELL_SIZE, offsetY + 9 * CELL_SIZE);
     ctx.stroke();
     
     // 绘制"楚河汉界"
@@ -108,8 +112,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     ctx.font = `bold ${riverFontSize}px Arial`;
     ctx.fillStyle = '#8B4513';
     ctx.textAlign = 'center';
-    ctx.fillText('楚河', BOARD_PADDING + 2 * CELL_SIZE, BOARD_PADDING + 4.6 * CELL_SIZE);
-    ctx.fillText('汉界', BOARD_PADDING + 6 * CELL_SIZE, BOARD_PADDING + 4.6 * CELL_SIZE);
+    ctx.fillText('楚河', offsetX + 2 * CELL_SIZE, offsetY + 4.6 * CELL_SIZE);
+    ctx.fillText('汉界', offsetX + 6 * CELL_SIZE, offsetY + 4.6 * CELL_SIZE);
         
     // 绘制将军提示
     if (gameStatus === 'check') {
@@ -194,8 +198,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     // 绘制合法移动提示
     legalMoves.forEach(([row, col]) => {
       const displayRow = shouldFlip ? (9 - row) : row;
-      const x = BOARD_PADDING + col * CELL_SIZE;
-      const y = BOARD_PADDING + displayRow * CELL_SIZE;
+      const x = offsetX + col * CELL_SIZE;
+      const y = offsetY + displayRow * CELL_SIZE;
       
       ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
       ctx.beginPath();
@@ -208,8 +212,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       const { from, to } = lastMove;
       // 绘制起始位置
       const fromDisplayRow = shouldFlip ? (9 - from[0]) : from[0];
-      const fromX = BOARD_PADDING + from[1] * CELL_SIZE;
-      const fromY = BOARD_PADDING + fromDisplayRow * CELL_SIZE;
+      const fromX = offsetX + from[1] * CELL_SIZE;
+      const fromY = offsetY + fromDisplayRow * CELL_SIZE;
       
       ctx.strokeStyle = 'rgba(255, 200, 0, 0.6)';
       ctx.lineWidth = 3;
@@ -219,8 +223,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       
       // 绘制目标位置
       const toDisplayRow = shouldFlip ? (9 - to[0]) : to[0];
-      const toX = BOARD_PADDING + to[1] * CELL_SIZE;
-      const toY = BOARD_PADDING + toDisplayRow * CELL_SIZE;
+      const toX = offsetX + to[1] * CELL_SIZE;
+      const toY = offsetY + toDisplayRow * CELL_SIZE;
       
       ctx.strokeStyle = 'rgba(255, 100, 0, 0.8)';
       ctx.lineWidth = 3;
@@ -235,8 +239,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
         const piece = board[row][col];
         if (piece) {
           const displayRow = shouldFlip ? (9 - row) : row;
-          const x = BOARD_PADDING + col * CELL_SIZE;
-          const y = BOARD_PADDING + displayRow * CELL_SIZE;
+          const x = offsetX + col * CELL_SIZE;
+          const y = offsetY + displayRow * CELL_SIZE;
           
           // 选中效果
           const isSelected = selectedPiece && selectedPiece.row === row && selectedPiece.col === col;
@@ -290,9 +294,9 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     // 根据玩家颜色决定是否翻转棋盘
     const shouldFlip = playerColor === 'black';
     
-    // 转换为棋盘坐标
-    const col = Math.round((x - BOARD_PADDING) / CELL_SIZE);
-    const displayRow = Math.round((y - BOARD_PADDING) / CELL_SIZE);
+    // 转换为棋盘坐标（考虑EXTRA_PADDING）
+    const col = Math.round((x - BOARD_PADDING - EXTRA_PADDING) / CELL_SIZE);
+    const displayRow = Math.round((y - BOARD_PADDING - EXTRA_PADDING) / CELL_SIZE);
     const row = shouldFlip ? (9 - displayRow) : displayRow;
     
     if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
@@ -329,8 +333,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   return (
     <canvas
       ref={canvasRef}
-      width={CELL_SIZE * 8 + BOARD_PADDING * 2}
-      height={CELL_SIZE * 9 + BOARD_PADDING * 2}
+      width={CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING * 2}
+      height={CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING * 2}
       onClick={handleClick}
       onTouchStart={(e) => {
         // 只在单指触摸时触发点击，双指用于缩放
