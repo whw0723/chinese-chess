@@ -5,10 +5,40 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   const canvasRef = useRef(null);
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
+  const [dimensions, setDimensions] = useState({ cellSize: 60, padding: 40 });
   
-  const CELL_SIZE = 60;
-  const BOARD_PADDING = 40;
-  const PIECE_RADIUS = 24;
+  // 响应式计算棋盘尺寸
+  useEffect(() => {
+    const updateDimensions = () => {
+      const screenWidth = window.innerWidth;
+      let cellSize, padding;
+      
+      if (screenWidth < 480) {
+        // 小屏手机：棋盘适配屏幕宽度，留出两侧留白
+        const maxWidth = screenWidth - 40; // 左右20px留白
+        cellSize = Math.floor((maxWidth - 60) / 8); // 60是两侧padding
+        padding = 30;
+      } else if (screenWidth < 768) {
+        // 中等手机/平板
+        cellSize = 50;
+        padding = 35;
+      } else {
+        // 桌面端
+        cellSize = 60;
+        padding = 40;
+      }
+      
+      setDimensions({ cellSize, padding });
+    };
+    
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+  
+  const CELL_SIZE = dimensions.cellSize;
+  const BOARD_PADDING = dimensions.padding;
+  const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.4);
   
   useEffect(() => {
     drawBoard();
@@ -73,8 +103,9 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     ctx.lineTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
     ctx.stroke();
     
-    // 绘制“楚河汉界”
-    ctx.font = 'bold 20px Arial';
+    // 绘制"楚河汉界"
+    const riverFontSize = Math.floor(CELL_SIZE * 0.33);
+    ctx.font = `bold ${riverFontSize}px Arial`;
     ctx.fillStyle = '#8B4513';
     ctx.textAlign = 'center';
     ctx.fillText('楚河', BOARD_PADDING + 2 * CELL_SIZE, BOARD_PADDING + 4.6 * CELL_SIZE);
@@ -88,7 +119,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       gradient.addColorStop(1, 'rgba(255, 0, 0, 0.8)');
           
       ctx.fillStyle = gradient;
-      ctx.font = 'bold 36px SimHei, "Microsoft YaHei", sans-serif';
+      const checkFontSize = Math.floor(CELL_SIZE * 0.6);
+      ctx.font = `bold ${checkFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -112,7 +144,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       gradient.addColorStop(1, 'rgba(255, 215, 0, 0.95)');
           
       ctx.fillStyle = gradient;
-      ctx.font = 'bold 48px SimHei, "Microsoft YaHei", sans-serif';
+      const winFontSize = Math.floor(CELL_SIZE * 0.8);
+      ctx.font = `bold ${winFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
@@ -141,7 +174,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       gradient.addColorStop(1, 'rgba(255, 50, 50, 0.95)');
           
       ctx.fillStyle = gradient;
-      ctx.font = 'bold 40px SimHei, "Microsoft YaHei", sans-serif';
+      const errorFontSize = Math.floor(CELL_SIZE * 0.67);
+      ctx.font = `bold ${errorFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
@@ -198,7 +232,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
           }
           
           // 绘制文字
-          ctx.font = 'bold 24px SimHei, "Microsoft YaHei", sans-serif';
+          const pieceFontSize = Math.floor(CELL_SIZE * 0.4);
+          ctx.font = `bold ${pieceFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
           ctx.fillStyle = piece.color === 'red' ? '#8B0000' : '#FFF';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -208,14 +243,23 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     }
   };
   
-  // 处理点击事件
+  // 处理点击/触摸事件
   const handleClick = (e) => {
     if (disabled) return; // 如果禁用则不响应点击
     
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // 支持触摸和鼠标事件
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    // 考虑 canvas 的实际显示大小与内部大小的比例
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
     
     // 根据玩家颜色决定是否翻转棋盘
     const shouldFlip = playerColor === 'black';
@@ -262,12 +306,21 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       width={CELL_SIZE * 8 + BOARD_PADDING * 2}
       height={CELL_SIZE * 9 + BOARD_PADDING * 2}
       onClick={handleClick}
+      onTouchStart={(e) => {
+        e.preventDefault();
+        handleClick(e);
+      }}
       style={{ 
         cursor: disabled ? 'not-allowed' : 'pointer',
         border: '2px solid #8B4513',
         borderRadius: '4px',
         boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-        opacity: disabled ? 0.7 : 1
+        opacity: disabled ? 0.7 : 1,
+        maxWidth: '100%',
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        touchAction: 'none'
       }}
     />
   );
