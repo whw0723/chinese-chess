@@ -14,14 +14,14 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       let cellSize, padding;
       
       if (screenWidth < 480) {
-        // 小屏手机：棋盘完全占满屏幕宽度
-        const maxWidth = screenWidth; // 不留边距
-        cellSize = Math.floor((maxWidth - 20) / 8); // 20是两侧极小padding
-        padding = 10;
+        // 小屏手机：棋盘尽可能占满屏幕宽度
+        const maxWidth = screenWidth - 10; // 留出极小边距
+        cellSize = Math.floor((maxWidth - 15) / 8); // 增大格子尺寸
+        padding = 8;
       } else if (screenWidth < 768) {
-        // 中等手机/平板
-        cellSize = 50;
-        padding = 35;
+        // 中等手机/平板：增大棋盘
+        cellSize = 58; // 从50增加到58
+        padding = 30;
       } else {
         // 桌面端
         cellSize = 60;
