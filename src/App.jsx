@@ -15,6 +15,7 @@ function App() {
   const [winner, setWinner] = useState(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null); // 错误提示消息
+  const [lastMove, setLastMove] = useState(null); // 最近一手棋
   
   // AI自动走棋
   useEffect(() => {
@@ -51,6 +52,9 @@ function App() {
     setHistory([...history, board]);
     setBoard(newBoard);
     
+    // 保存最近一手棋
+    setLastMove({ from: [fromRow, fromCol], to: [toRow, toCol] });
+    
     // 切换玩家
     const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
     
@@ -79,6 +83,7 @@ function App() {
         setCurrentPlayer(playerColor);
         setGameStatus('playing');
         setWinner(null);
+        setLastMove(null); // 清除最近一手棋
       }
     } else {
       // 双人对战：撤销一步
@@ -89,6 +94,7 @@ function App() {
         setCurrentPlayer(currentPlayer === 'red' ? 'black' : 'red');
         setGameStatus('playing');
         setWinner(null);
+        setLastMove(null); // 清除最近一手棋
       }
     }
   };
@@ -100,6 +106,7 @@ function App() {
     setGameStatus('playing');
     setWinner(null);
     setIsAiThinking(false);
+    setLastMove(null); // 清除最近一手棋
   };
   
   const handleBackToMenu = () => {
@@ -203,6 +210,7 @@ function App() {
         errorMessage={errorMessage}
         playerColor={gameMode === 'pve' ? (aiColor === 'red' ? 'black' : 'red') : 'red'}
         disabled={isAiThinking || (gameMode === 'pve' && currentPlayer === aiColor)}
+        lastMove={lastMove}
       />
       <div className="instructions">
         <h3>游戏说明</h3>

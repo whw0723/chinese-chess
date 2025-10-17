@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PIECE_NAMES, getLegalMoves } from './gameLogic';
 
-const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus, winner, errorMessage, playerColor = 'red' }) => {
+const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus, winner, errorMessage, playerColor = 'red', lastMove = null }) => {
   const canvasRef = useRef(null);
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
@@ -14,10 +14,10 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       let cellSize, padding;
       
       if (screenWidth < 480) {
-        // 小屏手机：棋盘适配屏幕宽度，留出两侧留白
-        const maxWidth = screenWidth - 20; // 左右各10px留白
-        cellSize = Math.floor((maxWidth - 40) / 8); // 40是两侧padding
-        padding = 20;
+        // 小屏手机：棋盘完全占满屏幕宽度
+        const maxWidth = screenWidth; // 不留边距
+        cellSize = Math.floor((maxWidth - 20) / 8); // 20是两侧极小padding
+        padding = 10;
       } else if (screenWidth < 768) {
         // 中等手机/平板
         cellSize = 50;
@@ -202,6 +202,32 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       ctx.arc(x, y, 10, 0, Math.PI * 2);
       ctx.fill();
     });
+    
+    // 绘制最近一手棋的标记
+    if (lastMove) {
+      const { from, to } = lastMove;
+      // 绘制起始位置
+      const fromDisplayRow = shouldFlip ? (9 - from[0]) : from[0];
+      const fromX = BOARD_PADDING + from[1] * CELL_SIZE;
+      const fromY = BOARD_PADDING + fromDisplayRow * CELL_SIZE;
+      
+      ctx.strokeStyle = 'rgba(255, 200, 0, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(fromX, fromY, PIECE_RADIUS + 5, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 绘制目标位置
+      const toDisplayRow = shouldFlip ? (9 - to[0]) : to[0];
+      const toX = BOARD_PADDING + to[1] * CELL_SIZE;
+      const toY = BOARD_PADDING + toDisplayRow * CELL_SIZE;
+      
+      ctx.strokeStyle = 'rgba(255, 100, 0, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(toX, toY, PIECE_RADIUS + 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     
     // 绘制棋子
     for (let row = 0; row < 10; row++) {
