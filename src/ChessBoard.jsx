@@ -39,7 +39,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   const CELL_SIZE = dimensions.cellSize;
   const BOARD_PADDING = dimensions.padding;
   const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.45); // 从0.4增加到0.45
-  const EXTRA_PADDING_X = 2; // 左右极小边距
+  const EXTRA_PADDING_X = 15; // 左右留足空间显示完整棋子
   const EXTRA_PADDING_Y = PIECE_RADIUS + 5; // 上下足够容纳棋子
   
   useEffect(() => {
