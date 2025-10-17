@@ -6,7 +6,7 @@ import './App.css';
 
 function App() {
   const [gameMode, setGameMode] = useState(null); // null: 选择模式, 'pvp': 双人对战, 'pve': 人机对战
-  const [difficulty, setDifficulty] = useState('medium'); // easy, medium, hard
+  const [difficulty, setDifficulty] = useState('easy'); // easy, medium, hard - 默认简单
   const [aiColor, setAiColor] = useState('black'); // AI执棋颜色
   const [board, setBoard] = useState(createInitialBoard());
   const [currentPlayer, setCurrentPlayer] = useState('red'); // 红方先手
