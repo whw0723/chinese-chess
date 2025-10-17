@@ -109,6 +109,18 @@ function App() {
     setLastMove(null); // 清除最近一手棋
   };
   
+  // 反转棋盘：交换玩家和AI的执棋颜色
+  const handleFlip = () => {
+    if (gameMode !== 'pve') return; // 只在人机对战模式下有效
+    
+    // 交换AI颜色
+    const newAiColor = aiColor === 'red' ? 'black' : 'red';
+    setAiColor(newAiColor);
+    
+    // 注意：棋局不变，只是反转视角
+    // playerColor 会自动通过 aiColor 的变化而更新
+  };
+  
   const handleBackToMenu = () => {
     handleReset();
     setGameMode(null);
@@ -196,6 +208,11 @@ function App() {
           <button onClick={handleReset} disabled={isAiThinking}>
             🔄 重新开始
           </button>
+          {gameMode === 'pve' && (
+            <button onClick={handleFlip} disabled={isAiThinking}>
+              🔁 反转
+            </button>
+          )}
           <button onClick={handleBackToMenu} disabled={isAiThinking}>
             🏠 返回菜单
           </button>

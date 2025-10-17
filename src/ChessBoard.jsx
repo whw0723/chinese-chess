@@ -216,7 +216,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       const fromX = offsetX + from[1] * CELL_SIZE;
       const fromY = offsetY + fromDisplayRow * CELL_SIZE;
       
-      ctx.strokeStyle = 'rgba(255, 200, 0, 0.6)';
+      ctx.strokeStyle = 'rgba(0, 200, 0, 0.7)'; // 改为绿色
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(fromX, fromY, PIECE_RADIUS + 5, 0, Math.PI * 2);
@@ -227,7 +227,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       const toX = offsetX + to[1] * CELL_SIZE;
       const toY = offsetY + toDisplayRow * CELL_SIZE;
       
-      ctx.strokeStyle = 'rgba(255, 100, 0, 0.8)';
+      ctx.strokeStyle = 'rgba(0, 200, 0, 0.7)'; // 改为绿色
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(toX, toY, PIECE_RADIUS + 5, 0, Math.PI * 2);
