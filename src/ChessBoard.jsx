@@ -166,8 +166,33 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       ctx.shadowOffsetY = 0;
     }
     
-    // 绘制和棋提示
-    if ((gameStatus === 'draw' || gameStatus === 'stalemate') && winner === 'draw') {
+    // 绘制困毙提示（中国象棋中困毙判负）
+    if (gameStatus === 'stalemate' && winner && winner !== 'draw') {
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(255, 165, 0, 1)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0.95)');
+          
+      ctx.fillStyle = gradient;
+      const winFontSize = Math.floor(CELL_SIZE * 0.8);
+      ctx.font = `bold ${winFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetX = 4;
+      ctx.shadowOffsetY = 4;
+      ctx.fillText(`${winner === 'red' ? '红方' : '黑方'}获胜！`, width / 2, height / 2);
+          
+      // 清除阴影效果
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
+    
+    // 绘制和棋提示（只有当winner === 'draw'时才是真正的和棋）
+    if (gameStatus === 'draw' && winner === 'draw') {
       const gradient = ctx.createLinearGradient(0, 0, width, 0);
       gradient.addColorStop(0, 'rgba(100, 149, 237, 0.95)');
       gradient.addColorStop(0.5, 'rgba(65, 105, 225, 1)');
@@ -182,11 +207,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       ctx.shadowBlur = 15;
       ctx.shadowOffsetX = 4;
       ctx.shadowOffsetY = 4;
-      ctx.fillText(
-        gameStatus === 'stalemate' ? '困毙 - 和棋！' : '和棋！', 
-        width / 2, 
-        height / 2
-      );
+      ctx.fillText('和棋！', width / 2, height / 2);
           
       // 清除阴影效果
       ctx.shadowColor = 'transparent';

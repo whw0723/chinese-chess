@@ -90,28 +90,31 @@ function App() {
       return;
     }
     
-    // 检查子力不足（吃子后检查是否双方都没有攻击性棋子）
-    if (isCapture && isInsufficientMaterial(newBoard)) {
-      setGameStatus('draw');
-      setWinner('draw');
-      return;
-    }
-    
     // 切换玩家
     const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
     
-    // 检查对手是否被将军或将死
+    // 先检查对手是否被将军或将死（优先级最高）
     if (isCheckmate(newBoard, nextPlayer)) {
       setGameStatus('checkmate');
       setWinner(currentPlayer);
     } else if (isStalemate(newBoard, nextPlayer)) {
-      // 困毙判和
+      // 中国象棋规则：困毙（无子可走但未被将军）判负，不是和棋
       setGameStatus('stalemate');
-      setWinner('draw');
+      setWinner(currentPlayer); // 困毙方判负，对手获胜
     } else if (isInCheck(newBoard, nextPlayer)) {
       setGameStatus('check');
     } else {
       setGameStatus('playing');
+    }
+    
+    // 检查子力不足（只在非将死/困毙情况下，且吃子后检查）
+    // 必须在将死判断之后，避免误判已被将死的局面为和棋
+    if (isCapture && 
+        gameStatus !== 'checkmate' && 
+        gameStatus !== 'stalemate' && 
+        isInsufficientMaterial(newBoard)) {
+      setGameStatus('draw');
+      setWinner('draw');
     }
     
     setCurrentPlayer(nextPlayer);
@@ -236,7 +239,9 @@ function App() {
         <div className="status">
           {gameStatus === 'checkmate' ? (
             <span className="winner">🏆 {winner === 'red' ? '红方' : '黑方'}获胜！</span>
-          ) : gameStatus === 'draw' || gameStatus === 'stalemate' ? (
+          ) : gameStatus === 'stalemate' ? (
+            <span className="winner">🏆 {winner === 'red' ? '红方' : '黑方'}获胜！（对手困毙）</span>
+          ) : gameStatus === 'draw' ? (
             <span className="draw">🤝 和棋！</span>
           ) : (
             <>
