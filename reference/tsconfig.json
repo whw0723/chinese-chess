@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "noEmit": false,
+    "allowImportingTsExtensions": true
+  }
+}

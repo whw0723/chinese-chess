@@ -165,6 +165,35 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
     }
+    
+    // 绘制和棋提示
+    if ((gameStatus === 'draw' || gameStatus === 'stalemate') && winner === 'draw') {
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, 'rgba(100, 149, 237, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(65, 105, 225, 1)');
+      gradient.addColorStop(1, 'rgba(100, 149, 237, 0.95)');
+          
+      ctx.fillStyle = gradient;
+      const drawFontSize = Math.floor(CELL_SIZE * 0.8);
+      ctx.font = `bold ${drawFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetX = 4;
+      ctx.shadowOffsetY = 4;
+      ctx.fillText(
+        gameStatus === 'stalemate' ? '困毙 - 和棋！' : '和棋！', 
+        width / 2, 
+        height / 2
+      );
+          
+      // 清除阴影效果
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
         
     // 绘制错误提示（不能送将等）
     if (errorMessage) {

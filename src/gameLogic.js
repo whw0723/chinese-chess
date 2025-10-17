@@ -408,3 +408,67 @@ export function isCheckmate(board, color) {
   
   return true;
 }
+
+// 检查是否困毙（无子可走但未被将军）
+export function isStalemate(board, color) {
+  // 如果被将军，则不是困毙
+  if (isInCheck(board, color)) return false;
+  
+  // 检查是否有任何合法移动
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (board[r][c] && board[r][c].color === color) {
+        const moves = getLegalMoves(board, r, c);
+        for (const [mr, mc] of moves) {
+          const newBoard = movePiece(board, r, c, mr, mc);
+          // 如果移动后不会被将军，说明有合法走法
+          if (!isInCheck(newBoard, color)) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+  
+  return true; // 无子可走
+}
+
+// 检查双方是否都缺乏足够的进攻棋子（和棋判定）
+export function isInsufficientMaterial(board) {
+  const pieces = { red: [], black: [] };
+  
+  // 收集所有棋子
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (board[r][c]) {
+        pieces[board[r][c].color].push(board[r][c].type);
+      }
+    }
+  }
+  
+  // 计算每方的进攻能力
+  const hasAttackingPieces = (colorPieces) => {
+    // 如果有车、马、炮，或者有过河兵，则有进攻能力
+    return colorPieces.some(type => 
+      type === PIECE_TYPES.ROOK || 
+      type === PIECE_TYPES.KNIGHT || 
+      type === PIECE_TYPES.CANNON
+    );
+  };
+  
+  // 如果双方都没有进攻棋子，则判定为和棋
+  return !hasAttackingPieces(pieces.red) && !hasAttackingPieces(pieces.black);
+}
+
+// 获取棋盘的哈希值（用于检测重复局面）
+export function getBoardHash(board) {
+  let hash = '';
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (board[r][c]) {
+        hash += `${r},${c},${board[r][c].color},${board[r][c].type};`;
+      }
+    }
+  }
+  return hash;
+}

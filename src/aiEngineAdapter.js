@@ -60,6 +60,57 @@ function convertMoveToOldFormat(mv) {
   };
 }
 
+// 评估AI的局势优势（正数表示AI优势，负数表示劣势）
+export function evaluatePosition(board, aiColor) {
+  const pos = convertBoardToPosition(board, aiColor);
+  
+  // 使用Position内置的evaluate方法
+  let score = pos.evaluate();
+  
+  // 如果是黑方，需要反转分数（因为引擎默认以红方视角评估）
+  if (aiColor === 'black') {
+    score = -score;
+  }
+  
+  return score;
+}
+
+// AI决定是否接受求和
+export function shouldAiAcceptDraw(board, aiColor, difficulty) {
+  const score = evaluatePosition(board, aiColor);
+  
+  // 难度影响决策阈值
+  const thresholds = {
+    easy: { accept: -50, reject: 100 },    // 简单AI更容易接受和棋
+    medium: { accept: -100, reject: 150 }, // 中等AI比较谨慎
+    hard: { accept: -150, reject: 200 }    // 困难AI只在劣势时接受
+  };
+  
+  const threshold = thresholds[difficulty] || thresholds.medium;
+  
+  // 决策逻辑：
+  // 1. 如果明显劣势（分数 < accept），接受求和
+  if (score < threshold.accept) {
+    console.log(`AI接受求和：局势劣势 (分数: ${score})`);
+    return true;
+  }
+  
+  // 2. 如果明显优势（分数 > reject），拒绝求和
+  if (score > threshold.reject) {
+    console.log(`AI拒绝求和：局势优势 (分数: ${score})`);
+    return false;
+  }
+  
+  // 3. 如果局势均衡，根据难度随机决定
+  const randomFactor = Math.random();
+  const acceptChance = difficulty === 'easy' ? 0.6 : difficulty === 'medium' ? 0.4 : 0.3;
+  
+  const accept = randomFactor < acceptChance;
+  console.log(`AI${accept ? '接受' : '拒绝'}求和：局势均衡 (分数: ${score}, 随机值: ${randomFactor.toFixed(2)})`);
+  
+  return accept;
+}
+
 // 主函数：计算最佳走法
 export function calculateBestMove(board, aiColor, difficulty = 'medium') {
   // 难度设置（重新调整）
