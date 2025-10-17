@@ -1,5 +1,17 @@
 import { PIECE_TYPES, getLegalMoves, movePiece, isInCheck, isCheckmate } from './gameLogic';
 
+// 常量定义
+const MATE_VALUE = 10000;  // 将死分值
+const WIN_VALUE = MATE_VALUE - 200;  // 胜利分值
+const LIMIT_DEPTH = 12;  // 最大搜索深度
+const NULL_DEPTH = 2;  // 空步裁剪深度
+const RANDOMNESS = 8;  // 随机性
+
+// Hash表标志
+const HASH_ALPHA = 1;
+const HASH_BETA = 2;
+const HASH_PV = 3;
+
 // 棋子价值表
 const PIECE_VALUES = {
   [PIECE_TYPES.ROOK]: 600,
@@ -227,83 +239,291 @@ function sortMoves(board, moves) {
   });
 }
 
-// Alpha-Beta剪枝的极大极小算法
-function minimax(board, depth, alpha, beta, isMaximizing, aiColor) {
+// 静态搜索 - 只搜索吃子和将军的局面
+function searchQuiescence(board, alpha, beta, aiColor, depth, maxDepth) {
+  // 防止静态搜索过深
+  if (depth >= maxDepth + 6) {
+    return evaluateBoard(board, aiColor);
+  }
+  
   const opponentColor = aiColor === 'red' ? 'black' : 'red';
   
   // 检查游戏结束
   if (isCheckmate(board, aiColor)) {
-    return -100000;
+    return -MATE_VALUE + depth;
   }
   if (isCheckmate(board, opponentColor)) {
-    return 100000;
+    return MATE_VALUE - depth;
   }
   
-  // 达到搜索深度
+  let standPat = evaluateBoard(board, aiColor);
+  
+  // 被将军时必须搜索所有走法
+  if (!isInCheck(board, aiColor)) {
+    if (standPat >= beta) {
+      return beta;
+    }
+    if (alpha < standPat) {
+      alpha = standPat;
+    }
+  }
+  
+  // 生成所有吃子走法和将军走法
+  const moves = isInCheck(board, aiColor) ? 
+    getAllPossibleMoves(board, aiColor) :
+    getCaptureMoves(board, aiColor);
+    
+  if (moves.length === 0) {
+    return standPat;
+  }
+  
+  // 移动排序
+  const sortedMoves = sortMoves(board, moves);
+  
+  for (const move of sortedMoves) {
+    const [fromRow, fromCol] = move.from;
+    const [toRow, toCol] = move.to;
+    const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
+    
+    // 如果这步棋导致自己被将军，跳过
+    if (isInCheck(newBoard, aiColor)) {
+      continue;
+    }
+    
+    const score = -searchQuiescence(newBoard, -beta, -alpha, opponentColor, depth + 1, maxDepth);
+    
+    if (score >= beta) {
+      return beta;
+    }
+    if (score > alpha) {
+      alpha = score;
+    }
+  }
+  
+  return alpha;
+}
+
+// 获取所有吃子走法
+function getCaptureMoves(board, color) {
+  const moves = [];
+  
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 9; col++) {
+      const piece = board[row][col];
+      if (piece && piece.color === color) {
+        const legalMoves = getLegalMoves(board, row, col);
+        legalMoves.forEach(([toRow, toCol]) => {
+          // 只考虑吃子走法
+          if (board[toRow][toCol]) {
+            const newBoard = movePiece(board, row, col, toRow, toCol);
+            if (!isInCheck(newBoard, color)) {
+              moves.push({
+                from: [row, col],
+                to: [toRow, toCol],
+                piece: piece,
+                captureValue: PIECE_VALUES[board[toRow][toCol].type]
+              });
+            }
+          }
+        });
+      }
+    }
+  }
+  
+  return moves;
+}
+
+// Alpha-Beta剪枝的极大极小算法（增强版）
+function minimax(board, depth, alpha, beta, aiColor, searchState, maxDepth) {
+  const opponentColor = aiColor === 'red' ? 'black' : 'red';
+  
+  // 检查游戏结束
+  if (isCheckmate(board, aiColor)) {
+    return -MATE_VALUE + (maxDepth - depth);
+  }
+  if (isCheckmate(board, opponentColor)) {
+    return MATE_VALUE - (maxDepth - depth);
+  }
+  
+  // 达到搜索深度，进入静态搜索
   if (depth === 0) {
-    return evaluateBoard(board, aiColor);
+    return searchQuiescence(board, alpha, beta, aiColor, 0, maxDepth);
   }
   
-  const currentColor = isMaximizing ? aiColor : opponentColor;
-  let moves = getAllPossibleMoves(board, currentColor);
+  // 检查置换表
+  const hashKey = getBoardHash(board);
+  const hashEntry = searchState.hashTable.get(hashKey);
+  if (hashEntry && hashEntry.depth >= depth) {
+    if (hashEntry.flag === HASH_PV) {
+      return hashEntry.value;
+    }
+    if (hashEntry.flag === HASH_ALPHA && hashEntry.value <= alpha) {
+      return alpha;
+    }
+    if (hashEntry.flag === HASH_BETA && hashEntry.value >= beta) {
+      return beta;
+    }
+  }
   
-  // 如果没有合法移动，返回评估值
+  let moves = getAllPossibleMoves(board, aiColor);
+  
+  // 如果没有合法移动
   if (moves.length === 0) {
     return evaluateBoard(board, aiColor);
   }
   
-  // 移动排序优化
-  moves = sortMoves(board, moves);
+  // 移动排序优化（使用历史表和杀手走法）
+  moves = sortMovesAdvanced(board, moves, searchState, depth, hashEntry);
   
-  if (isMaximizing) {
-    let maxEval = -Infinity;
+  let bestValue = -MATE_VALUE;
+  let bestMove = null;
+  let hashFlag = HASH_ALPHA;
+  
+  for (const move of moves) {
+    const [fromRow, fromCol] = move.from;
+    const [toRow, toCol] = move.to;
+    const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
     
-    for (const move of moves) {
-      const [fromRow, fromCol] = move.from;
-      const [toRow, toCol] = move.to;
-      const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
+    let value;
+    
+    // PVS (Principal Variation Search)
+    if (bestValue === -MATE_VALUE) {
+      // 第一个走法，完全窗口搜索
+      value = -minimax(newBoard, depth - 1, -beta, -alpha, opponentColor, searchState, maxDepth);
+    } else {
+      // 后续走法，先用窄窗口搜索
+      value = -minimax(newBoard, depth - 1, -alpha - 1, -alpha, opponentColor, searchState, maxDepth);
+      // 如果证明这步可能更好，重新用完全窗口搜索
+      if (value > alpha && value < beta) {
+        value = -minimax(newBoard, depth - 1, -beta, -alpha, opponentColor, searchState, maxDepth);
+      }
+    }
+    
+    if (value > bestValue) {
+      bestValue = value;
+      bestMove = move;
       
-      const evaluation = minimax(newBoard, depth - 1, alpha, beta, false, aiColor);
-      maxEval = Math.max(maxEval, evaluation);
-      alpha = Math.max(alpha, evaluation);
+      if (value > alpha) {
+        alpha = value;
+        hashFlag = HASH_PV;
+        
+        // 更新历史表
+        const historyKey = getMoveKey(move);
+        searchState.historyTable.set(historyKey, 
+          (searchState.historyTable.get(historyKey) || 0) + depth * depth);
+      }
       
-      if (beta <= alpha) {
+      if (alpha >= beta) {
+        hashFlag = HASH_BETA;
+        // 更新杀手走法
+        if (!searchState.killerMoves[depth]) {
+          searchState.killerMoves[depth] = [];
+        }
+        if (searchState.killerMoves[depth].length < 2) {
+          searchState.killerMoves[depth].unshift(move);
+        } else if (!movesEqual(searchState.killerMoves[depth][0], move)) {
+          searchState.killerMoves[depth][1] = searchState.killerMoves[depth][0];
+          searchState.killerMoves[depth][0] = move;
+        }
         break; // Beta剪枝
       }
     }
+  }
+  
+  // 保存到置换表
+  searchState.hashTable.set(hashKey, {
+    depth: depth,
+    value: bestValue,
+    flag: hashFlag,
+    bestMove: bestMove
+  });
+  
+  return bestValue;
+}
+
+// 获取棋盘哈希键
+function getBoardHash(board) {
+  let hash = '';
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 9; col++) {
+      const piece = board[row][col];
+      if (piece) {
+        hash += `${row}${col}${piece.type}${piece.color}`;
+      }
+    }
+  }
+  return hash;
+}
+
+// 获取走法键
+function getMoveKey(move) {
+  return `${move.from[0]},${move.from[1]}-${move.to[0]},${move.to[1]}`;
+}
+
+// 比较两个走法是否相等
+function movesEqual(move1, move2) {
+  if (!move1 || !move2) return false;
+  return move1.from[0] === move2.from[0] && 
+         move1.from[1] === move2.from[1] &&
+         move1.to[0] === move2.to[0] && 
+         move1.to[1] === move2.to[1];
+}
+
+// 高级移动排序（使用历史表和杀手走法）
+function sortMovesAdvanced(board, moves, searchState, depth, hashEntry) {
+  return moves.sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
     
-    return maxEval;
-  } else {
-    let minEval = Infinity;
+    // Hash表中的最佳走法优先级最高
+    if (hashEntry && hashEntry.bestMove) {
+      if (movesEqual(a, hashEntry.bestMove)) scoreA += 100000;
+      if (movesEqual(b, hashEntry.bestMove)) scoreB += 100000;
+    }
     
-    for (const move of moves) {
-      const [fromRow, fromCol] = move.from;
-      const [toRow, toCol] = move.to;
-      const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
-      
-      const evaluation = minimax(newBoard, depth - 1, alpha, beta, true, aiColor);
-      minEval = Math.min(minEval, evaluation);
-      beta = Math.min(beta, evaluation);
-      
-      if (beta <= alpha) {
-        break; // Alpha剪枝
+    // 杀手走法次优先
+    if (searchState.killerMoves[depth]) {
+      if (movesEqual(a, searchState.killerMoves[depth][0])) scoreA += 90000;
+      if (movesEqual(b, searchState.killerMoves[depth][0])) scoreB += 90000;
+      if (searchState.killerMoves[depth][1]) {
+        if (movesEqual(a, searchState.killerMoves[depth][1])) scoreA += 89000;
+        if (movesEqual(b, searchState.killerMoves[depth][1])) scoreB += 89000;
       }
     }
     
-    return minEval;
-  }
+    // 吃子走法
+    const [aToRow, aToCol] = a.to;
+    const [bToRow, bToCol] = b.to;
+    const aCapture = board[aToRow][aToCol] ? PIECE_VALUES[board[aToRow][aToCol].type] : 0;
+    const bCapture = board[bToRow][bToCol] ? PIECE_VALUES[board[bToRow][bToCol].type] : 0;
+    scoreA += aCapture;
+    scoreB += bCapture;
+    
+    // 历史表分数
+    const historyKeyA = getMoveKey(a);
+    const historyKeyB = getMoveKey(b);
+    scoreA += searchState.historyTable.get(historyKeyA) || 0;
+    scoreB += searchState.historyTable.get(historyKeyB) || 0;
+    
+    // 位置奖励
+    scoreA += getPositionBonus(a.piece, aToRow, aToCol);
+    scoreB += getPositionBonus(b.piece, bToRow, bToCol);
+    
+    return scoreB - scoreA;
+  });
 }
 
-// AI计算最佳移动
+// AI计算最佳移动（增强版 - 使用迭代加深）
 export function calculateBestMove(board, aiColor, difficulty = 'medium') {
-  // 根据难度设置搜索深度
-  const depthMap = {
-    easy: 1,
-    medium: 2,
-    hard: 3
+  // 根据难度设置搜索深度和时间限制
+  const settingsMap = {
+    easy: { maxDepth: 2, timeLimit: 500 },
+    medium: { maxDepth: 4, timeLimit: 2000 },
+    hard: { maxDepth: 6, timeLimit: 5000 }
   };
   
-  const searchDepth = depthMap[difficulty] || 2;
+  const settings = settingsMap[difficulty] || settingsMap.medium;
+  const startTime = Date.now();
   
   let moves = getAllPossibleMoves(board, aiColor);
   
@@ -311,24 +531,86 @@ export function calculateBestMove(board, aiColor, difficulty = 'medium') {
     return null;
   }
   
-  // 移动排序
-  moves = sortMoves(board, moves);
+  // 初始化搜索状态
+  const searchState = {
+    hashTable: new Map(),
+    historyTable: new Map(),
+    killerMoves: {},
+    nodesSearched: 0
+  };
   
   let bestMove = null;
-  let bestValue = -Infinity;
+  let bestValue = -MATE_VALUE;
   
-  for (const move of moves) {
-    const [fromRow, fromCol] = move.from;
-    const [toRow, toCol] = move.to;
-    const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
+  // 迭代加深搜索
+  for (let depth = 1; depth <= settings.maxDepth; depth++) {
+    const opponentColor = aiColor === 'red' ? 'black' : 'red';
     
-    const moveValue = minimax(newBoard, searchDepth - 1, -Infinity, Infinity, false, aiColor);
+    // 移动排序（每次迭代都会利用之前的信息）
+    moves = sortMovesAdvanced(board, moves, searchState, depth, null);
     
-    if (moveValue > bestValue) {
-      bestValue = moveValue;
-      bestMove = move;
+    let currentBest = null;
+    let currentValue = -MATE_VALUE;
+    let alpha = -MATE_VALUE;
+    const beta = MATE_VALUE;
+    
+    for (const move of moves) {
+      const [fromRow, fromCol] = move.from;
+      const [toRow, toCol] = move.to;
+      const newBoard = movePiece(board, fromRow, fromCol, toRow, toCol);
+      
+      searchState.nodesSearched++;
+      
+      let value;
+      if (currentBest === null) {
+        // 第一个走法
+        value = -minimax(newBoard, depth - 1, -beta, -alpha, opponentColor, searchState, depth);
+      } else {
+        // PVS优化
+        value = -minimax(newBoard, depth - 1, -alpha - 1, -alpha, opponentColor, searchState, depth);
+        if (value > alpha && value < beta) {
+          value = -minimax(newBoard, depth - 1, -beta, -alpha, opponentColor, searchState, depth);
+        }
+      }
+      
+      if (value > currentValue) {
+        currentValue = value;
+        currentBest = move;
+        
+        if (value > alpha) {
+          alpha = value;
+        }
+      }
+      
+      // 检查时间限制
+      if (Date.now() - startTime > settings.timeLimit) {
+        break;
+      }
+    }
+    
+    // 更新最佳走法
+    if (currentBest) {
+      bestMove = currentBest;
+      bestValue = currentValue;
+      
+      // 添加一些随机性（避免每次走法完全相同）
+      if (bestValue > -WIN_VALUE && bestValue < WIN_VALUE) {
+        bestValue += Math.floor(Math.random() * RANDOMNESS) - Math.floor(Math.random() * RANDOMNESS);
+      }
+    }
+    
+    // 如果找到必胜或必败的走法，提前结束
+    if (Math.abs(bestValue) > WIN_VALUE) {
+      break;
+    }
+    
+    // 检查时间限制
+    if (Date.now() - startTime > settings.timeLimit) {
+      break;
     }
   }
+  
+  console.log(`AI搜索完成: 深度=${settings.maxDepth}, 节点数=${searchState.nodesSearched}, 用时=${Date.now() - startTime}ms, 评估值=${bestValue}`);
   
   return bestMove;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ChessBoard from './ChessBoard';
 import { createInitialBoard, movePiece, isInCheck, isCheckmate } from './gameLogic';
-import { calculateBestMove } from './aiEngine';
+import { calculateBestMove } from './aiEngineAdapter';
 import './App.css';
 
 function App() {
