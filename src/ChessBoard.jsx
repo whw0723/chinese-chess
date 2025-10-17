@@ -20,12 +20,12 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
         padding = 8;
       } else if (screenWidth < 768) {
         // 中等手机/平板：增大棋盘
-        cellSize = 58; // 从50增加到58
+        cellSize = 65; // 从58增加到65
         padding = 30;
       } else {
-        // 桌面端
-        cellSize = 60;
-        padding = 40;
+        // 桌面端：进一步放大
+        cellSize = 70; // 从60增加到70
+        padding = 45; // 从40增加到45
       }
       
       setDimensions({ cellSize, padding });
