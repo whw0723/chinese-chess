@@ -39,7 +39,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   const CELL_SIZE = dimensions.cellSize;
   const BOARD_PADDING = dimensions.padding;
   const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.45); // 从0.4增加到0.45
-  const EXTRA_PADDING = PIECE_RADIUS + 5; // 额外padding容纳棋子
+  const EXTRA_PADDING_X = 2; // 左右极小边距
+  const EXTRA_PADDING_Y = PIECE_RADIUS + 5; // 上下足够容纳棋子
   
   useEffect(() => {
     drawBoard();
@@ -51,8 +52,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const width = CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING * 2;
-    const height = CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING * 2;
+    const width = CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING_X * 2;
+    const height = CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING_Y * 2;
     
     // 根据玩家颜色决定是否翻转棋盘
     const shouldFlip = playerColor === 'black';
@@ -65,8 +66,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     
-    const offsetX = BOARD_PADDING + EXTRA_PADDING;
-    const offsetY = BOARD_PADDING + EXTRA_PADDING;
+    const offsetX = BOARD_PADDING + EXTRA_PADDING_X;
+    const offsetY = BOARD_PADDING + EXTRA_PADDING_Y;
     
     // 横线
     for (let i = 0; i < 10; i++) {
@@ -295,8 +296,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
     const shouldFlip = playerColor === 'black';
     
     // 转换为棋盘坐标（考虑EXTRA_PADDING）
-    const col = Math.round((x - BOARD_PADDING - EXTRA_PADDING) / CELL_SIZE);
-    const displayRow = Math.round((y - BOARD_PADDING - EXTRA_PADDING) / CELL_SIZE);
+    const col = Math.round((x - BOARD_PADDING - EXTRA_PADDING_X) / CELL_SIZE);
+    const displayRow = Math.round((y - BOARD_PADDING - EXTRA_PADDING_Y) / CELL_SIZE);
     const row = shouldFlip ? (9 - displayRow) : displayRow;
     
     if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
@@ -333,8 +334,8 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   return (
     <canvas
       ref={canvasRef}
-      width={CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING * 2}
-      height={CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING * 2}
+      width={CELL_SIZE * 8 + BOARD_PADDING * 2 + EXTRA_PADDING_X * 2}
+      height={CELL_SIZE * 9 + BOARD_PADDING * 2 + EXTRA_PADDING_Y * 2}
       onClick={handleClick}
       onTouchStart={(e) => {
         // 只在单指触摸时触发点击，双指用于缩放
