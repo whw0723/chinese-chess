@@ -68,13 +68,28 @@ function App() {
   };
   
   const handleUndo = () => {
-    if (history.length > 0) {
-      const previousBoard = history[history.length - 1];
-      setBoard(previousBoard);
-      setHistory(history.slice(0, -1));
-      setCurrentPlayer(currentPlayer === 'red' ? 'black' : 'red');
-      setGameStatus('playing');
-      setWinner(null);
+    if (gameMode === 'pve') {
+      // 人机对战：撤销两步（AI的一步 + 玩家的一步），回到玩家走棋前
+      if (history.length >= 2) {
+        const previousBoard = history[history.length - 2];
+        setBoard(previousBoard);
+        setHistory(history.slice(0, -2));
+        // 玩家重新走棋，所以切换到玩家的颜色
+        const playerColor = aiColor === 'red' ? 'black' : 'red';
+        setCurrentPlayer(playerColor);
+        setGameStatus('playing');
+        setWinner(null);
+      }
+    } else {
+      // 双人对战：撤销一步
+      if (history.length > 0) {
+        const previousBoard = history[history.length - 1];
+        setBoard(previousBoard);
+        setHistory(history.slice(0, -1));
+        setCurrentPlayer(currentPlayer === 'red' ? 'black' : 'red');
+        setGameStatus('playing');
+        setWinner(null);
+      }
     }
   };
   
@@ -162,7 +177,13 @@ function App() {
           )}
         </div>
         <div className="controls">
-          <button onClick={handleUndo} disabled={history.length === 0 || isAiThinking}>
+          <button 
+            onClick={handleUndo} 
+            disabled={
+              isAiThinking || 
+              (gameMode === 'pve' ? history.length < 2 : history.length === 0)
+            }
+          >
             ⏮️ 悔棋
           </button>
           <button onClick={handleReset} disabled={isAiThinking}>

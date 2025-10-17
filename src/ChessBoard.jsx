@@ -15,9 +15,9 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       
       if (screenWidth < 480) {
         // 小屏手机：棋盘适配屏幕宽度，留出两侧留白
-        const maxWidth = screenWidth - 40; // 左右20px留白
-        cellSize = Math.floor((maxWidth - 60) / 8); // 60是两侧padding
-        padding = 30;
+        const maxWidth = screenWidth - 20; // 左右各10px留白
+        cellSize = Math.floor((maxWidth - 40) / 8); // 40是两侧padding
+        padding = 20;
       } else if (screenWidth < 768) {
         // 中等手机/平板
         cellSize = 50;
@@ -307,8 +307,11 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
       height={CELL_SIZE * 9 + BOARD_PADDING * 2}
       onClick={handleClick}
       onTouchStart={(e) => {
-        e.preventDefault();
-        handleClick(e);
+        // 只在单指触摸时触发点击，双指用于缩放
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          handleClick(e);
+        }
       }}
       style={{ 
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -319,8 +322,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
         maxWidth: '100%',
         height: 'auto',
         display: 'block',
-        margin: '0 auto',
-        touchAction: 'none'
+        margin: '0 auto'
       }}
     />
   );
