@@ -14,10 +14,11 @@ function App() {
   const [gameStatus, setGameStatus] = useState('playing'); // playing, check, checkmate
   const [winner, setWinner] = useState(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null); // 错误提示消息
   
   // AI自动走棋
   useEffect(() => {
-    if (gameMode === 'pve' && currentPlayer === aiColor && gameStatus === 'playing' && !isAiThinking) {
+    if (gameMode === 'pve' && currentPlayer === aiColor && gameStatus !== 'checkmate' && !isAiThinking) {
       setIsAiThinking(true);
       
       // 延迟一下让AI看起来在思考
@@ -40,7 +41,9 @@ function App() {
     
     // 检查移动后是否让自己被将军（非法移动）
     if (isInCheck(newBoard, currentPlayer)) {
-      alert('不能送将！');
+      setErrorMessage('不能送将！');
+      // 1.5秒后清除错误提示
+      setTimeout(() => setErrorMessage(null), 1500);
       return;
     }
     
@@ -55,10 +58,8 @@ function App() {
     if (isCheckmate(newBoard, nextPlayer)) {
       setGameStatus('checkmate');
       setWinner(currentPlayer);
-      alert(`${currentPlayer === 'red' ? '红方' : '黑方'}获胜！`);
     } else if (isInCheck(newBoard, nextPlayer)) {
       setGameStatus('check');
-      alert('将军！');
     } else {
       setGameStatus('playing');
     }
@@ -111,7 +112,7 @@ function App() {
               <span className="mode-title">双人对战</span>
               <span className="mode-desc">与好友面对面对弈</span>
             </button>
-            <button className="mode-btn" onClick={() => startGame('pve', 'black', 'medium')}>
+            <button className="mode-btn" onClick={() => startGame('pve', aiColor, difficulty)}>
               <span className="mode-icon">🤖</span>
               <span className="mode-title">人机对战</span>
               <span className="mode-desc">挑战AI对手</span>
@@ -121,7 +122,7 @@ function App() {
           <div className="ai-settings">
             <h3>AI设置</h3>
             <div className="setting-group">
-              <label>难度：</label>
+              <label>AI难度：</label>
               <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
                 <option value="easy">简单</option>
                 <option value="medium">中等</option>
@@ -129,10 +130,10 @@ function App() {
               </select>
             </div>
             <div className="setting-group">
-              <label>AI执棋：</label>
+              <label>玩家先后：</label>
               <select value={aiColor} onChange={(e) => setAiColor(e.target.value)}>
-                <option value="red">红方（AI先手）</option>
-                <option value="black">黑方（玩家先手）</option>
+                <option value="black">玩家先手（红方）</option>
+                <option value="red">AI先手（AI执红）</option>
               </select>
             </div>
           </div>
@@ -176,6 +177,10 @@ function App() {
         board={board} 
         onMove={handleMove}
         currentPlayer={currentPlayer}
+        gameStatus={gameStatus}
+        winner={winner}
+        errorMessage={errorMessage}
+        playerColor={gameMode === 'pve' ? (aiColor === 'red' ? 'black' : 'red') : 'red'}
         disabled={isAiThinking || (gameMode === 'pve' && currentPlayer === aiColor)}
       />
       <div className="instructions">

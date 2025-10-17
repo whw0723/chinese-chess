@@ -185,6 +185,43 @@ function getAdvisorMoves(board, row, col) {
   return moves;
 }
 
+// 检查两个将/帅是否照面
+function areKingsFacing(board) {
+  // 找到双方的将/帅位置
+  let redKingPos = null;
+  let blackKingPos = null;
+  
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (board[r][c] && board[r][c].type === PIECE_TYPES.KING) {
+        if (board[r][c].color === 'red') {
+          redKingPos = [r, c];
+        } else {
+          blackKingPos = [r, c];
+        }
+      }
+    }
+  }
+  
+  if (!redKingPos || !blackKingPos) return false;
+  
+  // 检查是否在同一列
+  if (redKingPos[1] !== blackKingPos[1]) return false;
+  
+  // 检查中间是否有棋子
+  const col = redKingPos[1];
+  const startRow = Math.min(redKingPos[0], blackKingPos[0]) + 1;
+  const endRow = Math.max(redKingPos[0], blackKingPos[0]);
+  
+  for (let r = startRow; r < endRow; r++) {
+    if (board[r][col] !== null) {
+      return false; // 中间有棋子，不照面
+    }
+  }
+  
+  return true; // 同一列且中间无子，照面了
+}
+
 // 获取将/帅的合法走法
 function getKingMoves(board, row, col) {
   const moves = [];
@@ -197,7 +234,11 @@ function getKingMoves(board, row, col) {
     
     if (isInPalace(r, c, color)) {
       if (board[r][c] === null || board[r][c].color !== color) {
-        moves.push([r, c]);
+        // 模拟移动后检查是否会导致将帅照面
+        const newBoard = movePiece(board, row, col, r, c);
+        if (!areKingsFacing(newBoard)) {
+          moves.push([r, c]);
+        }
       }
     }
   });
@@ -304,6 +345,11 @@ export function getLegalMoves(board, row, col) {
 
 // 检查是否被将军
 export function isInCheck(board, color) {
+  // 检查是否将帅照面
+  if (areKingsFacing(board)) {
+    return true;
+  }
+  
   // 找到己方的将/帅
   let kingPos = null;
   for (let r = 0; r < 10; r++) {

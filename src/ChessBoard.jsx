@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PIECE_NAMES, getLegalMoves } from './gameLogic';
 
-const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
+const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus, winner, errorMessage, playerColor = 'red' }) => {
   const canvasRef = useRef(null);
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [legalMoves, setLegalMoves] = useState([]);
@@ -12,7 +12,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
   
   useEffect(() => {
     drawBoard();
-  }, [board, selectedPiece, legalMoves]);
+  }, [board, selectedPiece, legalMoves, gameStatus, winner, errorMessage, playerColor]);
   
   // 绘制棋盘
   const drawBoard = () => {
@@ -22,6 +22,9 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
     const ctx = canvas.getContext('2d');
     const width = CELL_SIZE * 8 + BOARD_PADDING * 2;
     const height = CELL_SIZE * 9 + BOARD_PADDING * 2;
+    
+    // 根据玩家颜色决定是否翻转棋盘
+    const shouldFlip = playerColor === 'black';
     
     // 清空画布
     ctx.fillStyle = '#F5DEB3';
@@ -70,17 +73,95 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
     ctx.lineTo(BOARD_PADDING + 3 * CELL_SIZE, BOARD_PADDING + 9 * CELL_SIZE);
     ctx.stroke();
     
-    // 绘制"楚河汉界"
+    // 绘制“楚河汉界”
     ctx.font = 'bold 20px Arial';
     ctx.fillStyle = '#8B4513';
     ctx.textAlign = 'center';
     ctx.fillText('楚河', BOARD_PADDING + 2 * CELL_SIZE, BOARD_PADDING + 4.6 * CELL_SIZE);
     ctx.fillText('汉界', BOARD_PADDING + 6 * CELL_SIZE, BOARD_PADDING + 4.6 * CELL_SIZE);
+        
+    // 绘制将军提示
+    if (gameStatus === 'check') {
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, 'rgba(255, 0, 0, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.9)');
+      gradient.addColorStop(1, 'rgba(255, 0, 0, 0.8)');
+          
+      ctx.fillStyle = gradient;
+      ctx.font = 'bold 36px SimHei, "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+      ctx.fillText('将军！', width / 2, BOARD_PADDING / 2);
+          
+      // 清除阴影效果
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
+        
+    // 绘制绝杀提示
+    if (gameStatus === 'checkmate' && winner) {
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(255, 165, 0, 1)');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0.95)');
+          
+      ctx.fillStyle = gradient;
+      ctx.font = 'bold 48px SimHei, "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetX = 4;
+      ctx.shadowOffsetY = 4;
+      ctx.fillText(`${winner === 'red' ? '红方' : '黑方'}获胜！`, width / 2, height / 2);
+          
+      // 清除阴影效果
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
+        
+    // 绘制错误提示（不能送将等）
+    if (errorMessage) {
+      // 绘制半透明背景
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(0, 0, width, height);
+          
+      // 绘制错误消息
+      const gradient = ctx.createLinearGradient(0, 0, width, 0);
+      gradient.addColorStop(0, 'rgba(255, 50, 50, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(255, 0, 0, 1)');
+      gradient.addColorStop(1, 'rgba(255, 50, 50, 0.95)');
+          
+      ctx.fillStyle = gradient;
+      ctx.font = 'bold 40px SimHei, "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+      ctx.fillText(errorMessage, width / 2, height / 2);
+          
+      // 清除阴影效果
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
     
     // 绘制合法移动提示
     legalMoves.forEach(([row, col]) => {
+      const displayRow = shouldFlip ? (9 - row) : row;
       const x = BOARD_PADDING + col * CELL_SIZE;
-      const y = BOARD_PADDING + row * CELL_SIZE;
+      const y = BOARD_PADDING + displayRow * CELL_SIZE;
       
       ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
       ctx.beginPath();
@@ -93,8 +174,9 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
       for (let col = 0; col < 9; col++) {
         const piece = board[row][col];
         if (piece) {
+          const displayRow = shouldFlip ? (9 - row) : row;
           const x = BOARD_PADDING + col * CELL_SIZE;
-          const y = BOARD_PADDING + row * CELL_SIZE;
+          const y = BOARD_PADDING + displayRow * CELL_SIZE;
           
           // 选中效果
           const isSelected = selectedPiece && selectedPiece.row === row && selectedPiece.col === col;
@@ -135,9 +217,13 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false }) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
+    // 根据玩家颜色决定是否翻转棋盘
+    const shouldFlip = playerColor === 'black';
+    
     // 转换为棋盘坐标
     const col = Math.round((x - BOARD_PADDING) / CELL_SIZE);
-    const row = Math.round((y - BOARD_PADDING) / CELL_SIZE);
+    const displayRow = Math.round((y - BOARD_PADDING) / CELL_SIZE);
+    const row = shouldFlip ? (9 - displayRow) : displayRow;
     
     if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
     
