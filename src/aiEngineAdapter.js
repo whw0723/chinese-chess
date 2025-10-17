@@ -62,11 +62,11 @@ function convertMoveToOldFormat(mv) {
 
 // 主函数：计算最佳走法
 export function calculateBestMove(board, aiColor, difficulty = 'medium') {
-  // 难度设置（优化后）
+  // 难度设置（重新调整）
   const settingsMap = {
-    easy: { depth: 5, millis: 800, hashLevel: 16 },      // 简单：0.8秒
-    medium: { depth: 8, millis: 2000, hashLevel: 18 },   // 中等：2秒
-    hard: { depth: 10, millis: 4000, hashLevel: 19 }     // 困难：4秒，深度降为10
+    easy: { depth: 3, millis: 500, hashLevel: 14 },      // 简单：0.5秒，深度3（更简单）
+    medium: { depth: 5, millis: 800, hashLevel: 16 },   // 中等：0.8秒，深度5（原简单）
+    hard: { depth: 8, millis: 2000, hashLevel: 18 }     // 困难：2秒，深度8（原中等）
   };
   
   const settings = settingsMap[difficulty] || settingsMap.medium;
