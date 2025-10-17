@@ -38,7 +38,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
   
   const CELL_SIZE = dimensions.cellSize;
   const BOARD_PADDING = dimensions.padding;
-  const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.4);
+  const PIECE_RADIUS = Math.floor(CELL_SIZE * 0.45); // 从0.4增加到0.45
   
   useEffect(() => {
     drawBoard();
@@ -232,7 +232,7 @@ const ChessBoard = ({ board, onMove, currentPlayer, disabled = false, gameStatus
           }
           
           // 绘制文字
-          const pieceFontSize = Math.floor(CELL_SIZE * 0.4);
+          const pieceFontSize = Math.floor(CELL_SIZE * 0.48); // 从0.4增加到0.48
           ctx.font = `bold ${pieceFontSize}px SimHei, "Microsoft YaHei", sans-serif`;
           ctx.fillStyle = piece.color === 'red' ? '#8B0000' : '#FFF';
           ctx.textAlign = 'center';
